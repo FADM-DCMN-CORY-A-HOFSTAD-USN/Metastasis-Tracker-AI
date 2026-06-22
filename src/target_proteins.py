@@ -1,5 +1,102 @@
 import math
 
+class OncologicalTargetProteinEngine:
+    def __init__(self):
+        # Baseline receptor densities (molecules per micrometer squared) under homeostatic conditions
+        self.baseline_receptor_densities = {
+            "e_selectin": 45.0,     # Endothelial surface rolling target
+            "icam_1":     120.0,    # Firm adhesion immunoglobulins
+            "vcam_1":     60.0,     # Intercellular adhesion molecules
+            "cxcl12":     85.0,     # Chemokine homing beacon ligand
+            "cd44":       150.0,    # Hyaluronic acid matrix anchor
+            "mmp_2_9":    35.0      # Proteolytic remodeling zones
+        }
+
+    def calculate_generational_protein_targets(self, generation: int, local_ph: float, vessel_radius_m: float, wall_length_m: float) -> dict:
+        """
+        Calculates total available molecular targets and active binding affinities across vascular generations.
+        Expression profiles scale dynamically based on structural dimensions and localized pH status.
+        """
+        # Step 1: Calculate internal endothelial surface area of the vessel segment (micrometers^2)
+        vessel_radius_um = vessel_radius_m * 1e6
+        wall_length_um = wall_length_m * 1e6
+        endothelial_surface_area_um2 = 2.0 * math.pi * vessel_radius_um * wall_length_um
+        
+        # Step 2: Calculate Environmental Modification Scalar (Acidosis upregulates inflammatory targets)
+        # Endothelial activation spikes under localized tissue metabolic stress
+        acid_deviation = max(0.0, 7.40 - local_ph)
+        inflammation_amplifier = 1.0 + (4.5 * acid_deviation)
+        
+        # Step 3: Compute dynamic surface density and absolute molecular counts
+        active_profiles = {}
+        for target, base_density in self.baseline_receptor_densities.items():
+            # Selectins and Adhesion Immunoglobulins scale directly up with localized acid stress
+            if target in ["e_selectin", "icam_1", "vcam_1"]:
+                dynamic_density = base_density * inflammation_amplifier
+            else:
+                dynamic_density = base_density # Matrix targets maintain structural stability longer
+                
+            total_molecular_targets = dynamic_density * endothelial_surface_area_um2
+            
+            # Step 4: Calculate Dynamic Association Equilibrium Constant (Ka in M^-1)
+            # Severe acidosis (pH < 7.0) alters protein folding conformations, dropping affinity thresholds
+            if local_ph < 7.10:
+                binding_affinity_ka = 1.2e5 * (local_ph / 7.40)
+            else:
+                binding_affinity_ka = 3.5e5 * (1.0 + acid_deviation) # Mild strain tightens binding configurations
+                
+            active_profiles[target] = {
+                "surface_density_molecules_um2": round(dynamic_density, 2),
+                "absolute_target_count_this_segment": int(total_molecular_targets),
+                "binding_affinity_ka_M1": round(binding_affinity_ka, 1)
+            }
+            
+        return {
+            "vessel_generation": generation,
+            "vessel_surface_area_um2": endothelial_surface_area_um2,
+            "local_environmental_ph": local_ph,
+            "target_protein_profiles": active_profiles
+        }
+
+    def compute_organ_homing_chemokine_gradients(self, organ_name: str, total_organ_mass_g: float, local_ph: float) -> dict:
+        """
+        Maps organ-specific expression weightings for the CXCR4/CXCL12 chemokine homing axis.
+        Highly metabolic or heavily targeted secondary organs express higher base chemokine footprints.
+        """
+        # Base organ tropic affinities for secondary metastasis colonizations
+        organ_tropic_baselines = {
+            "liver":       0.85, # High CXCL12 source
+            "brain":       0.60, # Protected but highly targeted by specific cell lines
+            "kidney_each": 0.30, # Moderate vascular footprint
+            "heart":       0.05, # Historically highly resistant to cancer cell seeding
+            "spleen":      0.40,
+            "pancreas":    0.50
+        }
+        
+        base_tropism = organ_tropic_baselines.get(organ_name.lower(), 0.10)
+        
+        # Extracellular matrix acidosis enhances localized chemokine shedding and vascular leakiness
+        acid_modifier = 1.0 + (2.0 * max(0.0, 7.40 - local_ph))
+        
+        # Total effective expression scales relative to functioning biological tissue mass
+        effective_cxcl12_chemokine_index = base_tropism * total_organ_mass_g * acid_modifier
+        
+        # Determine CTC arrest hazard level based on structural tropism configurations
+        if effective_cxcl12_chemokine_index > 1000.0:
+            hazard = "CRITICAL METASTASIS CAPTURE ZONE"
+        elif effective_cxcl12_chemokine_index > 300.0:
+            hazard = "ELEVATED SEEDING ACCELERATION"
+        else:
+            hazard = "LOW BASAL SEEDING TRAFFIC"
+            
+        return {
+            "target_organ_identity": organ_name,
+            "organ_tropism_weight": base_tropism,
+            "calculated_cxcl12_chemokine_index": round(effective_cxcl12_chemokine_index, 2),
+            "metastatic_seeding_hazard_status": hazard
+        }
+
+
 class SystemicChemicalCompositionEngine:
     def __init__(self, global_hydration_level: float):
         """
