@@ -33,59 +33,100 @@ class PatientSimulationEngine:
 
     def generate_circulatory_tree(self) -> dict:
         """
-        Generates dimensions and pressure drops across 31 generations (0 to 30)
-        of the Systemic and Pulmonary vascular networks using WBE fractal scaling.
+        Generates dimensions, non-Newtonian regional viscosity, and pressure drops 
+        across 31 generations (0 to 30) of the vascular networks.
         """
         # Base Aorta dimensions (Generation 0) scaled by BSA and hydration
-        r_aorta = math.sqrt(self.bsa / (2.0 * math.pi)) * 0.01 * (self.chi ** 0.5) # meters
-        l_aorta = 0.25 * math.sqrt(self.bsa) # meters
+        r_aorta = math.sqrt(self.bsa / (2.0 * math.pi)) * 0.01 * (self.chi ** 0.5) 
+        l_aorta = 0.25 * math.sqrt(self.bsa) 
         
-        # Inflow blood pressures (Pascals: 120 mmHg mean sys ~ 13332 Pa, 15 mmHg pulm ~ 2000 Pa)
+        # Base input pressures (Pascals)
         p_systemic_in = 13332.0 
         p_pulmonary_in = 2000.0
         
         systemic_tree = []
         pulmonary_tree = []
-        
-        # Systemic Flow split across the tree
-        q_total = self.cardiac_output / 1000.0 # m^3/s
-        
-        # Loop through 31 generations of branching
+        q_total = self.cardiac_output / 1000.0  # m^3/s
+
+        # Baseline hematocrit scaled directly by hydration state
+        base_hct = 0.45 * (1.0 / self.chi)
+        # Dynamic plasma viscosity base (Pascal-seconds)
+        mu_plasma = 0.0012 * (1.0 / (self.chi ** 0.3))
+
         for z in range(31):
             num_vessels = 2 ** z
             
-            # Fractal scaling laws (WBE Model)
+            # Geometry matrices (WBE fractal tracking)
             r_sys = r_aorta * (2.0 ** (-z / 3.0))
             l_sys = l_aorta * (2.0 ** (-z / 3.0))
             
             r_pulm = (r_aorta * 1.1) * (2.0 ** (-z / 3.0))
             l_pulm = (l_aorta * 0.2) * (2.0 ** (-z / 3.0))
             
-            # Flow per individual vessel segment at generation z
+            # Flow partitioning per individual vessel segment
             q_seg = q_total / num_vessels
             
-            # Poiseuille's Law for Hydrodynamic Resistance: R = (8 * mu * L) / (pi * r^4)
-            r_hydro_sys = (8.0 * self.mu * l_sys) / (math.pi * (r_sys ** 4))
-            r_hydro_pulm = (8.0 * self.mu * l_pulm) / (math.pi * (r_pulm ** 4))
+            # 1. COMPUTE REGIONAL SHEAR RATES (gamma = 4 * Q / (pi * r^3))
+            shear_sys = (4.0 * q_seg) / (math.pi * (r_sys ** 3)) if r_sys > 0 else 1000.0
+            shear_pulm = (4.0 * q_seg) / (math.pi * (r_pulm ** 3)) if r_pulm > 0 else 1000.0
             
-            # Pressure Drop across this generation: Delta P = Q * R
+            # 2. APPLY REGIONAL VISCOSITY LAYER (Fåhræus-Lindqvist & Carreau-Yasuda Model)
+            mu_sys = self._calculate_regional_viscosity(r_sys, base_hct, shear_sys, mu_plasma)
+            mu_pulm = self._calculate_regional_viscosity(r_pulm, base_hct, shear_pulm, mu_plasma)
+            
+            # 3. POISEUILLE'S RESISTANCE USING THE DYNAMIC REGIONAL VISCOSITY
+            r_hydro_sys = (8.0 * mu_sys * l_sys) / (math.pi * (r_sys ** 4))
+            r_hydro_pulm = (8.0 * mu_pulm * l_pulm) / (math.pi * (r_pulm ** 4))
+            
+            # 4. PRESSURE DROP TRANSLATION
             delta_p_sys = q_seg * r_hydro_sys
             delta_p_pulm = q_seg * r_hydro_pulm
             
-            # Track progressive pressure decay downstream
             p_systemic_in -= delta_p_sys
             p_pulmonary_in -= delta_p_pulm
             
             systemic_tree.append({
-                "generation": z, "count": num_vessels, "radius_m": r_sys, 
-                "length_m": l_sys, "pressure_out_mmHg": max(0.0, p_systemic_in / 133.322)
+                "generation": z, "count": num_vessels, "radius_m": r_sys, "length_m": l_sys,
+                "viscosity_Pa_s": mu_sys, "shear_rate_s1": shear_sys,
+                "pressure_out_mmHg": max(0.0, p_systemic_in / 133.322)
             })
             pulmonary_tree.append({
-                "generation": z, "count": num_vessels, "radius_m": r_pulm, 
-                "length_m": l_pulm, "pressure_out_mmHg": max(0.0, p_pulmonary_in / 133.322)
+                "generation": z, "count": num_vessels, "radius_m": r_pulm, "length_m": l_pulm,
+                "viscosity_Pa_s": mu_pulm, "shear_rate_s1": shear_pulm,
+                "pressure_out_mmHg": max(0.0, p_pulmonary_in / 133.322)
             })
             
         return {"systemic_arterial_tree": systemic_tree, "pulmonary_tree": pulmonary_tree}
+
+    def _calculate_regional_viscosity(self, radius_m: float, hct: float, shear_rate: float, mu_plasma: float) -> float:
+        """
+        Mathematical helper combining structural confinement and velocity profiles.
+        """
+        d_micron = radius_m * 2.0 * 1e6
+        
+        # Guard rail for large macrovessels or macro-scaling defaults
+        if d_micron <= 0:
+            return 0.0035
+
+        # Phase 1: Fåhræus-Lindqvist Effect (Confinement reduction of high shear viscosity)
+        # Empirical Pries et al. formulation for effective structural hematocrit alignment
+        if d_micron < 300.0:
+            # Drop in relative discharge hematocrit due to cell migration to the centerline
+            h_relative = hct * (0.4 + 0.6 * (1.0 - math.exp(-0.06 * d_micron)))
+            mu_inf = mu_plasma * (1.0 + 2.5 * h_relative + 6.0 * (h_relative ** 2))
+        else:
+            mu_inf = mu_plasma * (1.0 + 2.5 * hct + 6.2 * (hct ** 2)) # Macro baseline
+
+        # Phase 2: Carreau-Yasuda Low-Shear Thickening (Non-Newtonian erythrocyte aggregation)
+        # Parameters configured for realistic red blood cell bridging mechanics
+        mu_zero = mu_inf * 4.5    # Zero-shear limit viscosity (high aggregation)
+        lambda_t = 3.313          # Relaxation time constant (seconds)
+        n_index = 0.358           # Power-law index (shear-thinning behavior)
+        a_index = 2.0             # Transition zone geometry parameter
+        
+        # Carreau-Yasuda formula combining micro-confinement limit and localized velocity profile
+        viscosity = mu_inf + (mu_zero - mu_inf) * (1.0 + (lambda_t * abs(shear_rate)) ** a_index) ** ((n_index - 1.0) / a_index)
+        return viscosity
 
     def generate_airway_tree(self) -> list:
         """
