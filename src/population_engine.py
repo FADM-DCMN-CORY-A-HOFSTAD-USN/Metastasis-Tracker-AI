@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class PycnogonidPopulationEngine:
     def __init__(self, config):
         """
@@ -20,6 +21,35 @@ class PycnogonidPopulationEngine:
         self.opt_temp = env["optimal_breeding_temp_c"]
         self.q10 = env["thermal_exponential_limit_q10"]
         self.turb_exponent = env["turbulence_fertilization_penalty_exponent"]
+        
+        # New pH Optima and Tolerance Span
+        self.opt_ph = env.get("optimal_ph", 8.1)
+        self.sigma_ph = env.get("ph_tolerance_sigma", 0.35)  # Determines how sharp the survival drop is
+        
+        # Environmental Carrying Capacity (To ground the exponential growth model)
+        self.carrying_capacity = env.get("carrying_capacity", 5000.0)
+
+    def calculate_environmental_scalars(self, temperature, turbulence, ph):
+        """
+        Computes the reproductive and survival scalars based on climate context.
+        """
+        # 1. Thermal exponential scaling (Q10 Rule)
+        thermal_scalar = self.q10 ** ((temperature - self.opt_temp) / 10.0)
+        
+        # 2. Turbulence mating penalty
+        fertilization_success = max(0.01, 1.0 - (turbulence ** self.turb_exponent))
+        
+        # 3. pH Stress Curve (Gaussian bell-curve representing physiological tolerance)
+        # Drops sharply as pH drifts far from standard ocean chemistry (8.1)
+        ph_scalar = np.exp(-((ph - self.opt_ph) ** 2) / (2 * (self.sigma_ph ** 2)))
+        
+        # Calculate composite values
+        # pH suppresses both breeding capability and larval survival rates
+        scaled_f_adult = self.base_f_adult * thermal_scalar * fertilization_success * ph_scalar
+        scaled_f_brooding = self.base_f_brooding * thermal_scalar * fertilization_success * ph_scalar
+        scaled_p_larva = self.base_p_larva_juv * ph_scalar
+        
+        return scaled_f_adult, scaled_f_brooding, scaled_p_larva, ph_scalar
 
     def compute_dynamic_fecundity(self, temperature, turbulence):
         """
@@ -39,46 +69,46 @@ class PycnogonidPopulationEngine:
         
         return scaled_f_adult, scaled_f_brooding
 
-    def construct_lefkovitch_matrix(self, temperature, turbulence):
+    def construct_lefkovitch_matrix(self, temperature, turbulence, ph):
         """
-        Builds the 4x4 matrix mapping transition probabilities and fecundity.
+        Builds the dynamic 4x4 matrix mapping transitions and environmental strain.
         """
-        f_adult, f_brooding = self.compute_dynamic_fecundity(temperature, turbulence)
+        f_adult, f_brooding, p_larva_juv, _ = self.calculate_environmental_scalars(temperature, turbulence, ph)
         
-        # Stage Order: [Larva, Juvenile, Adult, Brooding_Male]
+        # Stage Matrix Setup: [Larva, Juvenile, Adult, Brooding_Male]
         L = np.array([
-            [0.0,              0.0,              f_adult,            f_brooding],
-            [self.p_larva_juv, 0.0,              0.0,                0.0       ],
-            [0.0,              self.p_juv_adult, self.p_adult_adult, 0.0       ],
-            [0.0,              0.0,              0.15,               0.0       ] # 15% of adults enter brooding stage
+            [0.0,         0.0,              f_adult,            f_brooding],
+            [p_larva_juv, 0.0,              0.0,                0.0       ],
+            [0.0,         self.p_juv_adult, self.p_adult_adult, 0.0       ],
+            [0.0,         0.0,              0.15,               0.0       ]
         ])
         return L
 
     def run_projection(self, initial_population, time_steps, env_timeline):
         """
-        Executes the matrix multiplication across time steps using dynamic timelines.
-        
-        env_timeline: List of dicts containing {"temperature": float, "turbulence": float} per step
-        initial_population: List/Array of 4 floats representing initial counts [L, J, A, B]
+        Executes the matrix multiplication while accounting for pH surges and carrying capacity.
         """
-        # Convert state vector to a column matrix for dot product operations
         pop_vector = np.array(initial_population, dtype=float).reshape(-1, 1)
-        
-        # Array to store demographics over time: shape (4, time_steps + 1)
         history = np.zeros((4, time_steps + 1))
         history[:, 0] = pop_vector.flatten()
         
         for t in range(time_steps):
-            # Fetch environmental variables for this specific tick
-            env = env_timeline[t] if t < len(env_timeline) else {"temperature": self.opt_temp, "turbulence": 0.1}
+            # Fallback environment context if timeline runs short
+            env = env_timeline[t] if t < len(env_timeline) else {"temperature": 14.0, "turbulence": 0.1, "ph": 8.1}
             
-            # Construct dynamic matrix step
-            L_t = self.construct_lefkovitch_matrix(env["temperature"], env["turbulence"])
+            # Construct matrix step with real-time pH parameter
+            L_t = self.construct_lefkovitch_matrix(env["temperature"], env["turbulence"], env["ph"])
             
-            # Linear Algebra Matrix Multiplication: N_(t+1) = L_t . N_t
-            pop_vector = np.dot(L_t, pop_vector)
+            # 1. Standard Linear Projection step
+            next_pop_vector = np.dot(L_t, pop_vector)
             
-            # Save demographic vector
+            # 2. Apply a density-dependent saturation penalty (Logistic Carrying Capacity filter)
+            total_pop = np.sum(next_pop_vector)
+            if total_pop > self.carrying_capacity:
+                saturation_factor = self.carrying_capacity / total_pop
+                next_pop_vector *= saturation_factor
+                
+            pop_vector = next_pop_vector
             history[:, t + 1] = pop_vector.flatten()
             
         return history
