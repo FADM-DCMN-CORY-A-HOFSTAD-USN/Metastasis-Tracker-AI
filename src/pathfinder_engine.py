@@ -103,6 +103,8 @@ class ParasitePathfinder:
                 print("\n--- INFECTION PATH CONCLUDED (VESICLE FORMATION BEGUN) ---")
                 break 
 
+                return
+
 if __name__ == "__main__":
     # Example Initialization
     patient_data = {
