@@ -1,0 +1,26 @@
+{
+  "pycnogonid_salivary_profile": {
+    "exopeptidase_alpha": {
+      "enzyme_class": "Protease",
+      "optimal_ph": 7.8,
+      "v_max_moles_sec_mg": 3.4e-6,
+      "k_m_molar": 0.012,
+      "target_affinities": {
+        "actinoporin_complex": 0.90,
+        "mesogleal_collagen_type_i": 0.45,
+        "mucinous_glycoprotein_3": 0.15
+      }
+    },
+    "collagenase_beta": {
+      "enzyme_class": "Metalloproteinase",
+      "optimal_ph": 8.2,
+      "v_max_moles_sec_mg": 5.8e-6,
+      "k_m_molar": 0.005,
+      "target_affinities": {
+        "actinoporin_complex": 0.20,
+        "mesogleal_collagen_type_i": 0.95,
+        "mucinous_glycoprotein_3": 0.10
+      }
+    }
+  }
+}
