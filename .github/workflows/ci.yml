@@ -1,0 +1,36 @@
+name: Metastasis-Tracker-AI Continuous Integration Suite
+
+on:
+  push:
+    branches: [ "main", "development" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  validate-anatomy-pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.11 environment
+      uses: actions/setup-python@v5
+      with:
+        python-python-version: '3.11'
+
+    - name: Install Ingestion Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        # Ensure PyYAML is present to parse patient validation bounds configs
+        pip install pyyaml
+
+    - name: Grant Shell Script Write Permissions
+      run: chmod +x run_pipeline.sh
+
+    - name: Run Unified Ecosystem Pipeline Platform Driver
+      run: ./run_pipeline.sh
+
+    - name: Execute Electrophysiological Cardiac Test Matrix
+      run: python3 src/cardiac_ecg_engine.py
