@@ -1,7 +1,16 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag
 
+
+compile-gif:
+	@echo "Executing frame compression and compiling animated .gif payload packages..."
+	chmod +x src/compile_gif.sh
+	./src/compile_gif.sh
+
+test-anticoag:
+	@echo "Running dynamic clotting inhibition system unit verifications..."
+	python3 src/trauma_anticoag_core.py
 
 animate:
 	@echo "Compiling animated spatial tracking rotation path sequences..."
