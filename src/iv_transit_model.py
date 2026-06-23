@@ -1,4 +1,82 @@
 import math
+# ==============================================================================
+# 🪝 PYCNOGONID BIOENERGETIC ENGINE INTEGRATION HOOK
+# ==============================================================================
+import os
+import json
+from src.biomass_scaler import PycnogonidBiomassEngine
+from src.population_engine import PycnogonidPopulationEngine
+from src.tracker_bridge import TrackerBiomassOrchestrator
+
+# 1. Resolve relative directory paths for standard data files
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROTEIN_DATA_PATH = os.path.join(BASE_DIR, "src", "data", "target_proteins.json")
+THERMAL_DATA_PATH = os.path.join(BASE_DIR, "src", "data", "pycnogonid_thermal_profiles.json")
+
+# 2. Safely parse JSON parameter files
+with open(PROTEIN_DATA_PATH, "r") as pf:
+    protein_configuration = json.load(pf)
+with open(THERMAL_DATA_PATH, "r") as tf:
+    thermal_profiles = json.load(tf)
+
+# 3. Instantiate the sub-calculation blocks
+# Baseline morphology: 8.0mm femur, 0.5mm baseline leg radius
+biomass_calculation_core = PycnogonidBiomassEngine({
+    "base_femur_length_mm": 8.0, 
+    "base_leg_radius_mm": 0.5
+})
+
+# Extract target species profile constants for the Lefkovitch population tensor
+species_key = "Pycnogonidae_shallow_profile"
+population_config_wrapper = {
+    "breeding_matrix_config": thermal_profiles["pycnogonid_thermal_development_matrix"][species_key]
+}
+population_calculation_core = PycnogonidPopulationEngine(population_config_wrapper)
+
+# 4. Initialize the communication orchestrator bridge
+biomass_tracker_orchestrator = TrackerBiomassOrchestrator(
+    biomass_engine=biomass_calculation_core,
+    population_engine=population_calculation_core,
+    protein_config=protein_configuration
+)
+
+# 5. Pre-seed the agent's internal nutrient pool to enable reproduction calculations
+# Adjust this value (in mm3) depending on the initial state of the tracker agent
+biomass_calculation_core.accumulated_protein_vol = 6.20 
+
+print("✅ Pycnogonid bioenergetic engine successfully hooked into tracking routing.")
+
+# ==============================================================================
+# 🔄 INNER LOOP INTEGRATION EXAMPLE (Insert inside your path navigation loops)
+# ==============================================================================
+# Inside your tracking loops where the agent jumps between nodes, paste this step block:
+
+# Target Tracking Variables Mock (Ensure these match your live tracking outputs)
+current_tracking_node_id = "cerebral_capillary_bed_alpha" # Live node ID string
+time_delta_this_step = 1.0 # Duration spent at this coordinates node (seconds)
+
+# Live climate context variables query
+live_environment_context = {
+    "temperature": 14.0, 
+    "turbulence": 0.0, 
+    "ph": 8.1
+}
+
+# RUNTIME EXECUTION CALL
+biomass_step_report = biomass_tracker_orchestrator.process_tracker_location_step(
+    location_id=current_tracking_node_id,
+    local_env_context=live_environment_context,
+    delta_time=time_delta_this_step
+)
+
+# Parse output telemetry results for automated diagnostic tracking
+if biomass_step_report["status"] == "REPRODUCTION_CYCLING":
+    print(f"🔥 ALERT: Gonopore activation confirmed at node [{current_tracking_node_id}].")
+    print(f"   New generational output vector: {biomass_step_report['larval_pool_generation']}")
+else:
+    residual_reserves = biomass_step_report["protein_reserves_remaining"]
+    print(f"🔹 Absorbing nutrients at node [{current_tracking_node_id}]. Current internal pool: {residual_reserves:.4f} mm3")
+# ==============================================================================
 
 class IntravenousTransitModel:
     def __init__(self, introduced_mass_mg: float, particle_radius_um: float):
