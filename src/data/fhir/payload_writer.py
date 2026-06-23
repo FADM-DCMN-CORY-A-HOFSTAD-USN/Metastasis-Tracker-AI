@@ -8,7 +8,7 @@ class FHIRPayloadWriter:
         Ingests runtime tracking metrics and outputs a production-grade 
         HL7 FHIR R4 JSON transaction bundle directly to the data directory.
         """
-        output_filepath = "tools/patient_hemostasis_payload.json"
+        output_filepath = "src/data/fhir/patient_hemostasis_payload.json"
         
         fhir_bundle = {
             "resourceType": "Bundle",
