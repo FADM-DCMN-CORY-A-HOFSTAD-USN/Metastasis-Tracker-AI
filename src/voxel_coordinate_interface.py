@@ -1,6 +1,42 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import unittest
+from src.voxel_coordinate_interface import OcularVoxelStructuralInterface
+
+class TestOcularVoxelBoundaryAssertions(unittest.TestCase):
+    def setUp(self):
+        """Initializes a standard 32-voxel structural testing grid."""
+        self.interface = OcularVoxelStructuralInterface(grid_resolution=32)
+
+    def test_valid_coordinate_injection_bounds(self):
+        """
+        VERIFICATION: Ensures normalized coordinate parameters exactly on 
+        or within the limits [0.0, 1.0] resolve cleanly.
+        """
+        # Testing homeostatic center points and absolute limits edges
+        try:
+            self.interface.inject_tracking_coordinate_node(0.5, 0.5, 0.5)
+            self.interface.inject_tracking_coordinate_node(0.0, 0.0, 0.0)
+            self.interface.inject_tracking_coordinate_node(1.0, 1.0, 1.0)
+        except ValueError:
+            self.fail("Anatomy Error: Valid structural boundaries threw an unexpected exception.")
+
+    def test_out_of_bounds_rejection_traps(self):
+        """
+        VERIFICATION: Assures the injection loop raises a ValueError if parameters
+        cross past the allowed physical limits thresholds.
+        """
+        # Test negative out-of-bounds breach vector
+        with self.assertRaises(ValueError):
+            self.interface.inject_tracking_coordinate_node(-0.01, 0.5, 0.5)
+            
+        # Test upper scale boundary limits overflow vector
+        with self.assertRaises(ValueError):
+            self.interface.inject_tracking_coordinate_node(0.5, 1.005, 0.5)
+            
+        with self.assertRaises(ValueError):
+            self.interface.inject_tracking_coordinate_node(0.5, 0.5, 9.99)
 
 class OcularVoxelStructuralInterface:
     def __init__(self, grid_resolution: int = 32):
@@ -66,3 +102,6 @@ if __name__ == "__main__":
         )
         
     voxel_mapper.render_voxel_diagnostic_plot()
+
+if __name__ == "__main__":
+    unittest.main()
