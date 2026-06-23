@@ -1,0 +1,43 @@
+{
+  "pycnogonid_thermal_development_matrix": {
+    "Nymphonidae_polar_profile": {
+      "representative_species": "Nymphon australe",
+      "environment": "Polar / Abyssal Deep Sea",
+      "thermal_constants": {
+        "developmental_zero_t_base_c": -1.8,
+        "required_degree_days_d_thermal": 480.0,
+        "optimal_hatching_temp_c": 1.5
+      },
+      "larval_initial_allocations": {
+        "standard_yolk_volume_mm3": 1.8e-4,
+        "metabolic_exponent_gamma": 0.67
+      }
+    },
+    "Pycnogonidae_shallow_profile": {
+      "representative_species": "Pycnogonum littorale",
+      "environment": "Temperate Intertidal / Shallow Littoral",
+      "thermal_constants": {
+        "developmental_zero_t_base_c": 4.5,
+        "required_degree_days_d_thermal": 185.0,
+        "optimal_hatching_temp_c": 15.0
+      },
+      "larval_initial_allocations": {
+        "standard_yolk_volume_mm3": 2.6e-4,
+        "metabolic_exponent_gamma": 0.72
+      }
+    },
+    "Phoxichilidiidae_gall_profile": {
+      "representative_species": "Anoplodactylus petiolatus",
+      "environment": "Subtropical / Parasitic Gall-Forming",
+      "thermal_constants": {
+        "developmental_zero_t_base_c": 8.0,
+        "required_degree_days_d_thermal": 95.0,
+        "optimal_hatching_temp_c": 22.0
+      },
+      "larval_initial_allocations": {
+        "standard_yolk_volume_mm3": 1.1e-4,
+        "metabolic_exponent_gamma": 0.65
+      }
+    }
+  }
+}
