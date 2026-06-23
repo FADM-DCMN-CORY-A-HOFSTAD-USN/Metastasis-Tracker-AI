@@ -1,11 +1,15 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki parse-tokens check-links scan-perfusion
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki parse-tokens check-links scan-perfusion export-json-logs
 
 check-links:
 	@echo "Scanning all custom markdown documentation files for broken file path links..."
 	chmod +x src/check_md_links.sh
 	./src/check_md_links.sh
+
+export-json-logs:
+	@echo "Compressing raw data tables into timestamped binary GZIP JSON transaction packages..."
+	python3 -c "from src.data.logs.json_transaction_logger import JSONTransactionLogger; l=JSONTransactionLogger(); sample=[{'step':i, 'ph':7.4-(i*0.01), 'cbf':250.0-(i*50)} for i in range(5)]; l.serialize_and_compress_log(sample)"
 
 scan-perfusion:
 	@echo "Ingesting HDF5 telemetry layers to check for out-of-bounds coronary perfusion anomalies..."
