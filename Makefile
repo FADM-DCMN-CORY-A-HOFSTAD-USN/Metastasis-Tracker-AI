@@ -1,11 +1,15 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary
 
 test-local-workflow:
 	@echo "Launching complete local validation testing workflow suite..."
 	chmod +x tests/run_local_workflow.sh
 	./tests/run_local_workflow.sh
+
+visualize-pulmonary:
+	@echo "Extracting telemetry arrays to render diagnostic pulmonary compliance line charts..."
+	python3 -c "from src.pulmonary_hdf5_core import HDF5TelemetryPipelineEngine; e=HDF5TelemetryPipelineEngine('tests/pipeline_telemetry.h5'); e.write_mock_hdf5_telemetry_file(8809, 1.0, 8); from src.pulmonary_visualizer import HDF5PulmonaryVisualizer; v=HDF5PulmonaryVisualizer('tests/pipeline_telemetry.h5'); v.load_and_render_trends()"
 
 parse-h5:
 	@echo "Parsing high-density HDF5 data logs into human-readable console rows..."
