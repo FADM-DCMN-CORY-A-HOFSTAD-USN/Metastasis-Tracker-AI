@@ -55,11 +55,11 @@ Post-embryonic trajectories vary heavily by family, fluctuating from free-living
 -------------------------
 
 To:\
-*The Department of Ocean Biology*\
+*The Department of Biology of Marine Systems*\
 *Harvard University*\
 *Cambridge, MA, USA*
 
-Dear Members of the Department of Ocean Biology,
+Dear Members of the Department of Biology of Marine Systems,
 
 I am writing to express my formal gratitude for your invaluable assistance and the foundational resources provided regarding Pycnogonida biological data.
 
