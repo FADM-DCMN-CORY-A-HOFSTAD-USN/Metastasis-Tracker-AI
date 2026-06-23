@@ -98,3 +98,54 @@ void UPycnogonidSubstepManager::EndPlay(const EEndPlayReason::Type EndPlayReason
     OnPhysicsSubstepDelegate.Unbind();
     Super::EndPlay(EndPlayReason);
 }
+
+#include "PycnogonidSubstepManager.h"
+#include "objects/public/PycnogonidBiomassPayload.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
+#include "Components/PrimitiveComponent.h"
+
+// Assuming an instance of the bridge is accessible to this component
+// (e.g., as a member variable: FPycnogonidBiomassBridge BiomassBridge;)
+
+void UPycnogonidSubstepManager::OnPhysicsSubstep(float SubstepDeltaTime, FBodyInstance* BodyInstance)
+{
+    if (!BodyInstance) return;
+
+    // 1. Initialize a local storage container for the unboxed data
+    FPycnogonidBiomassPayload UnboxedPayload;
+
+    // 2. Perform a lock-free, atomic read from the main game loop thread
+    // This completes in O(1) time without blocking the high-frequency physics thread
+    if (BiomassBridge.ReadLatestState(UnboxedPayload))
+    {
+        // 3. Dynamically update the mass profile of the rigid body node
+        // Forces physical gravity and momentum reactions to adjust to current nutritional values
+        BodyInstance->SetBodyMass(UnboxedPayload.CurrentMassMg);
+
+        // 4. Update the physical collision scale profile (Width/Thickness)
+        // ConditionFactor > 1.0 expands the cylinder radius (Thick profile)
+        // ConditionFactor < 1.0 compresses the cylinder radius (Skinny profile)
+        FVector DynamicScale = FVector(UnboxedPayload.ConditionFactor, UnboxedPayload.ConditionFactor, 1.0f);
+        BodyInstance->SetBodyScale(DynamicScale);
+        
+        // Update local tracking copy for subsequent un-triggered substeps
+        SubstepStructuralIntegrity = UnboxedPayload.ConditionFactor;
+    }
+
+    // 5. Apply the resolved physical scales to the active joint motor drive systems
+    float BaseStiffness = 5000.0f;
+    float BaseDamping = 250.0f;
+
+    // Joint stiffness drops linearly if structural integrity or thickness degrades
+    float ScaledStiffness = BaseStiffness * SubstepStructuralIntegrity;
+    float ScaledDamping = BaseDamping * FMath::Max(0.1f, SubstepStructuralIntegrity);
+
+    for (UPhysicsConstraintComponent* Constraint : TargetConstraints)
+    {
+        if (Constraint)
+        {
+            // Inject scaled parameters straight into the low-level physics constraints matrix
+            Constraint->SetAngularDriveParams(ScaledStiffness, ScaledDamping, 0.0f);
+        }
+    }
+}
