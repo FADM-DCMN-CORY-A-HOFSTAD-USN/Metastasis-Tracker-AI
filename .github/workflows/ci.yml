@@ -7,6 +7,19 @@ on:
     branches: [ "main" ]
 
 jobs:
+
+  - name: Compile and Flatten Ingestion Spreadsheet logs
+    run: |
+      if [ -f src/data/fhir/compile_csv.sh ]; then
+        chmod +x src/data/fhir/compile_csv.sh
+        ./src/data/fhir/compile_csv.sh
+      fi
+
+  - name: Run Automated Spreadsheet Anomaly Detection Checkpoint
+    run: |
+      chmod +x src/data/fhir/run_diagnostics.sh
+      ./src/data/fhir/run_diagnostics.sh
+
   validate-anatomy-pipeline:
     runs-on: ubuntu-latest
 
