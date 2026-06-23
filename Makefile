@@ -1,8 +1,13 @@
-# =====================================================================
-# Metastasis-Tracker-AI Platform Automation Controller Makefile
-# =====================================================================
+# Append these lines to your existing root Makefile mapping core target shortcuts
+.PHONY: plot config-archive
 
-.PHONY: test validate run-ui parse archive local-webhook help
+plot:
+	@echo "Processing packed tracking spatial coordinates arrays into 3D Voxel models..."
+	python3 src/voxel_coordinate_interface.py
+
+config-archive:
+	@echo "Parsing YAML retention thresholds to execute automated configuration archiving..."
+	python3 src/archive_config_wrapper.py
 
 # Default target executes complete continuous validation bounds
 all: validate test
