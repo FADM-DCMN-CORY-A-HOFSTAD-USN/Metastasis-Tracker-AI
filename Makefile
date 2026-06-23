@@ -1,6 +1,14 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki parse-tokens check-links scan-perfusion export-json-logs
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema parse-h5 test-hdf5-compliance visualize-pulmonary test-chart-layout deploy-wiki parse-tokens check-links scan-perfusion export-json-logs parse-cohort-stats test-checksums
+
+parse-cohort-stats:
+	@echo "Aggregating uncorrupted compressed transaction sheets to calculate population metrics..."
+	python3 -c "from src.data.logs.json_transaction_logger import JSONTransactionLogger; l=JSONTransactionLogger('tests/scratch_logs'); l.serialize_and_compress_log([{'ph':7.41,'cbf':250}], 'p1'); l.serialize_and_compress_log([{'ph':7.15,'cbf':115}], 'p2'); print(l.parse_multi_patient_cohort_statistics())"
+
+test-checksums:
+	@echo "Executing SHA-256 cryptographic sidecar file verification test suites..."
+	python3 -m unittest tests/test_redox_checksums.py
 
 check-links:
 	@echo "Scanning all custom markdown documentation files for broken file path links..."
