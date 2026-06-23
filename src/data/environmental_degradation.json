@@ -1,0 +1,12 @@
+{
+  "chemical_degradation_constants": {
+    "chitin_matrix_profile": {
+      "optimal_ph": 8.1,
+      "acid_degradation_k": 0.005,
+      "acid_exponent_a": 2.2,
+      "alkaline_degradation_k": 0.018,
+      "alkaline_exponent_b": 2.5,
+      "critical_integrity_threshold": 0.30
+    }
+  }
+}
