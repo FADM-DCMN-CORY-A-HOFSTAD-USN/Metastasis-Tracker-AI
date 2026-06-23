@@ -1,0 +1,88 @@
+{
+  "resourceType": "Bundle",
+  "id": "tx-bundle-sepsis-hemostasis-2026",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:patient-core-01",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "pat-metastasis-tracker-01",
+        "active": true,
+        "name": [
+          {
+            "use": "official",
+            "family": "Cohort_Alpha",
+            "given": ["Simulated_Subject_03"]
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:observation-coag-01",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "obs-plt-coag-inhibition",
+        "status": "final",
+        "category": [
+          {
+            "coding": [
+              {
+                "system": "http://hl7.org",
+                "code": "laboratory",
+                "display": "Laboratory"
+              }
+            ]
+          }
+        ],
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "26515-7",
+              "display": "Platelets [#/volume] in Blood by Automated count"
+            }
+          ],
+          "text": "Platelet Concentration count coupled to dynamic drug inhibition scaling matrix."
+        },
+        "subject": {
+          "reference": "urn:uuid:patient-core-01"
+        },
+        "effectiveDateTime": "2026-06-23T14:45:00Z",
+        "valueQuantity": {
+          "value": 250000.0,
+          "unit": "cells/uL",
+          "system": "http://unitsofmeasure.org",
+          "code": "/uL"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "http://local-simulation-identifiers/codes",
+                  "code": "ANTICOAG_IDX",
+                  "display": "Pharmacological Anticoagulation Heparin Inhibition Index (I_drug)"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 0.85,
+              "unit": "fraction",
+              "system": "http://unitsofmeasure.org",
+              "code": "1"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    }
+  ]
+}
