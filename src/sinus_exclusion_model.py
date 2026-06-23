@@ -78,6 +78,50 @@ else:
     print(f"🔹 Absorbing nutrients at node [{current_tracking_node_id}]. Current internal pool: {residual_reserves:.4f} mm3")
 # ==============================================================================
 
+# Insert this updated pattern inside your execution tracking scripts:
+
+from src.biomass_scaler import PycnogonidBiomassEngine
+from src.population_engine import PycnogonidPopulationEngine
+from src.tracker_bridge import TrackerBiomassOrchestrator
+from src.tracker_logger import TrackerDiagnosticLogger
+
+# 1. Initialize core engines and communication paths
+bio_eng = PycnogonidBiomassEngine({"base_femur_length_mm": 8.0, "base_leg_radius_mm": 0.5})
+pop_eng = PycnogonidPopulationEngine({"breeding_matrix_config": {
+    "leslie_matrix_coefficients": {"fecundity_adult_f": 15.0, "fecundity_brooding_f": 40.0, "survival_larva_to_juv": 0.25, "survival_juv_to_adult": 0.60, "adult_retention_rate": 0.92},
+    "environmental_sensitivities": {"optimal_breeding_temp_c": 14.0, "thermal_exponential_limit_q10": 2.0, "turbulence_fertilization_penalty_exponent": 1.5, "optimal_ph": 8.1, "ph_tolerance_sigma": 0.35}
+}})
+orchestrator = TrackerBiomassOrchestrator(bio_eng, pop_eng, {})
+
+# 2. Instantiate the new diagnostic logger module
+diagnostic_logger = TrackerDiagnosticLogger(filename_prefix="cerebral_path_run")
+
+# --- Inside your active node navigation loop ---
+current_node = "cerebral_capillary_bed_alpha"
+env_context = {"temperature": 14.2, "turbulence": 0.0, "ph": 8.1}
+
+# Execute the bioenergetic tensor calculation step
+step_report = orchestrator.process_tracker_location_step(
+    location_id=current_node,
+    local_env_context=env_context,
+    delta_time=1.0
+)
+
+# Extract internal parameters to ensure total visibility inside the JSON file
+current_cf = 1.3 if bio_eng.accumulated_protein_vol > 5.0 else 1.0
+internal_telemetry = {
+    "protein_vol": bio_eng.accumulated_protein_vol,
+    "condition_factor": current_cf
+}
+
+# 3. Log the step payload seamlessly into outbound/
+diagnostic_logger.log_step(
+    location_id=current_node,
+    local_env=env_context,
+    report_output=step_report,
+    internal_metrics=internal_telemetry
+)
+
 class NasalSinusExclusionEngine:
     def __init__(self, object_max_diameter_mm: float, is_motile: bool = False):
         """
