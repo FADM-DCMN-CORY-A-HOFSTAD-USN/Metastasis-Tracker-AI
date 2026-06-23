@@ -1,6 +1,15 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir test-local-workflow print-h5-schema
+
+test-local-workflow:
+	@echo "Launching complete local validation testing workflow suite..."
+	chmod +x tests/run_local_workflow.sh
+	./tests/run_local_workflow.sh
+
+print-h5-schema:
+	@echo "Displaying multi-dimensional HDF5 database logging layout schemas..."
+	python3 -c "from src.pulmonary_collapse_engine import PulmonaryCollapseSimulationEngine; print(PulmonaryCollapseSimulationEngine.get_hdf5_logging_schema_template())"
 
 test-reflexes:
 	@echo "Executing aerodynamic gas jet and somatic muscular reflex unit verifications..."
