@@ -1,6 +1,14 @@
 # Append these lines to your existing root Makefile mapping core target shortcuts
 # Append these validation targets to your repository root Makefile mapping configuration
-.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline
+.PHONY: plot config-archive animate test-bounds compile-gif test-anticoag test-schema export-fhir compile-csv test-fhir-pipeline test-reflexes export-reflex-fhir
+
+test-reflexes:
+	@echo "Executing aerodynamic gas jet and somatic muscular reflex unit verifications..."
+	python3 src/respiratory_reflex_engine.py
+
+export-reflex-fhir:
+	@echo "Processing respiratory reflex metrics into HL7 FHIR R4 JSON observation structures..."
+	python3 -c "from src.respiratory_reflex_engine import IntegratedRespiratoryReflexEngine; e=IntegratedRespiratoryReflexEngine(175,72,1.0); r=e.evaluate_lower_airway_cough(0,4.5,7.4); e.commit_fhir_observation_record('pat-09', r)"
 
 compile-csv:
 	@echo "Flattening individual timestamped JSON logs into a unified flat CSV spreadsheet..."
