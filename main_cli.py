@@ -187,6 +187,13 @@ def process_patient_ehr(ehr_file, args, agent_config):
         epic_gateway.transmit_metastasis_bundle(out_file)
     except Exception as e:
         print(f"[-] Epic Transmission Failed for {patient_id}: {str(e)}")
+            if args.push_to_epic:
+    try:
+        from src.epic_interconnect_gateway import EpicInterconnectGateway
+        epic_gateway = EpicInterconnectGateway(args.epic_url, args.epic_client, args.epic_key)
+        epic_gateway.transmit_metastasis_bundle(out_file)
+    except Exception as e:
+        print(f"[-] Epic Transmission Failed for {patient_id}: {str(e)}")
             return True, ehr_file, out_file
 
         elif args.mode == "trauma":
