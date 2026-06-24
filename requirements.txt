@@ -1,3 +1,35 @@
-typer
+# =======================================================
+# Metastasis-Tracker-AI : Master Dependencies
+# =======================================================
+
+# --- High-Performance Computing & Mathematics ---
+# Required for JIT compilation, NVIDIA CUDA interception, and biological matrices.
+numba>=0.58.1
+numpy>=1.26.0
+scipy>=1.11.3
+
+# --- Command Line Interfaces & Terminal UIs ---
+# Required for the educator_cli.py and interactive terminal diagnostics.
+typer>=0.9.0
+rich>=13.7.0
+
+# --- Artificial Intelligence ---
+# Required for the interactive medical educator and architectural assistant.
+google-genai>=0.3.0
+
+# --- Data Serialization, Logging & Storage ---
+# Required for validation_bounds.yaml, pulmonary_hdf5_core.py, and telemetry parsing.
+PyYAML>=6.0.1
+h5py>=3.10.0
+pandas>=2.1.1
+
+# --- Clinical Visualization & Diagnostics ---
+# Required for validate_plots.py and generating remote wiki diagnostic charts.
+matplotlib>=3.8.0
+seaborn>=0.13.0
+
+# --- Network & Webhook Diagnostics (Optional/Testing) ---
+# Required for test_local_webhook.sh and remote pipeline routing.
+requests>=2.31.0typer
 rich
 google-genai
