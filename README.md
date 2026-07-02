@@ -158,6 +158,16 @@ from src.trauma_fluid_core import VascularHemorrhageDynamicsEngine
 trauma_engine = VascularHemorrhageDynamicsEngine(tip_radius_microns=3.5)
 ```
 
+## 🌐 Multi-Modal Hardware Ingestion Bridge
+
+This repository includes a production-ready spatial co-registration and clinical validation bridge under `/src` and `/config`. It connects the theoretical fluid resistance arrays directly with raw operational medical imaging equipment profiles.
+
+### 📐 Clinical Mapping Paradigm
+- **Config Ingestion (`config_loader.py`):** Automatically reads affine translation profiles, Dixon phase offsets, and Hounsfield offsets from Carestream X-ray systems and GE Medical 3T MRI pulse sequences.
+- **Series Aggregation (`dicom_series_aggregator.py`):** Scans input folders, parses absolute physical `ImagePositionPatient` coordinate tags, stacks files sequentially along the Z-axis, and builds normalized 3D array grids.
+- **AI Diagnostics Support (`ai_diagnostic_app.py`):** Automatically cross-references processed real-time 3D voxel density arrays against custom research manuscripts stored in `./docs/`, exporting structural diagnostic validation markdown sheets into `./reports/` at runtime.
+
+
 📄 License
 ----------
 
